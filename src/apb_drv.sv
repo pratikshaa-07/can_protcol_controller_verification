@@ -14,6 +14,42 @@ class apb_driver extends uvm_driver #(apb_seq_item);
   endfunction
 
   task run_phase(uvm_phase phase);
-  endtask
+    vif.drv_cb.PSEL <= 0;  vif.drv_cb.PENABLE <= 0;
+    vif.drv_cb.PWRITE <= 0; vif.drv_cb.PADDR <= '0;
+    vif.drv_cb.PWDATA <= '0; vif.drv_cb.PSTRB <= '0;
+    vif.drv_cb.PPROT <= '0;
+    repeat(3)@(vif.drv_cb);
+    forever begin
+    seq_item_port.get_next_item(req);
+    drv(req);
+    seq_item_port.item_done();
+  end
+endtask
+
+
+task drv();
+  vif.drv_cb.PSEL    <= 1;
+  vif.drv_cb.PENABLE <= 0;
+  vif.drv_cb.PADDR   <= req.paddr;
+  vif.drv_cb.PWRITE  <= req.pwrite;
+  vif.drv_cb.PWDATA  <= req.pwrite ? item.pwdata : '0;
+  vif.drv_cb.PSTRB   <= req.pwrite ? item.pstrb  : '0;
+
+  @(vif.drv_cb);                            
+  vif.drv_cb.PENABLE <= 1;
+  wait(vif.drv_cb.PREADY);  
+  req.prdata  = vif.drv_cb.PRDATA;           
+  req.pslverr = vif.drv_cb.PSLVERR;
+
+  @(vif.drv_Cb);
+  vif.drv_cb.PSEL    <= 0;
+  vif.drv_cb.PENABLE <= 0;
+  
+  if(req.paddr==8'h0C)
+    begin
+      repeat(3)@(vif.drv_cb);
+    end
+  @(vif.drv_cb);
+endtask
 
 endclass
