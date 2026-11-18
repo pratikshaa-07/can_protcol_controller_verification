@@ -21,6 +21,7 @@ class apb_active_agent extends uvm_agent;
 
   function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
+
     drv.seq_item_port.connect(seqr.seq_item_export);
   endfunction
 
