@@ -2,7 +2,8 @@ class apb_driver extends uvm_driver #(apb_seq_item);
 
   `uvm_component_utils(apb_driver)
   virtual apb_if vif;
-
+  apb_seq_item req;
+  
   function new(string name = "",uvm_component parent);
     super.new(name, parent);
   endfunction
@@ -21,7 +22,7 @@ class apb_driver extends uvm_driver #(apb_seq_item);
     repeat(3)@(vif.drv_cb);
     forever begin
     seq_item_port.get_next_item(req);
-    drv(req);
+      drv();
     seq_item_port.item_done();
   end
 endtask
@@ -32,16 +33,16 @@ task drv();
   vif.drv_cb.PENABLE <= 0;
   vif.drv_cb.PADDR   <= req.paddr;
   vif.drv_cb.PWRITE  <= req.pwrite;
-  vif.drv_cb.PWDATA  <= req.pwrite ? item.pwdata : '0;
-  vif.drv_cb.PSTRB   <= req.pwrite ? item.pstrb  : '0;
-
+  vif.drv_cb.PWDATA  <= req.pwrite ? req.pwdata : '0;
+  vif.drv_cb.PSTRB   <= req.pstrb;
+  `uvm_info("APB_DRV",$sformatf("pwrite=%0d paddr=%0h pwdata=%0d pstrb=%0d",req.pwrite,req.paddr,req.pwdata,req.pstrb),UVM_LOW)
   @(vif.drv_cb);                            
   vif.drv_cb.PENABLE <= 1;
   wait(vif.drv_cb.PREADY);  
   req.prdata  = vif.drv_cb.PRDATA;           
   req.pslverr = vif.drv_cb.PSLVERR;
-
-  @(vif.drv_Cb);
+  `uvm_info("APB_DRV",$sformatf("prdata=%0d pslverr=%b",req.prdata,req.pslverr),UVM_LOW)
+  @(vif.drv_cb);
   vif.drv_cb.PSEL    <= 0;
   vif.drv_cb.PENABLE <= 0;
   
